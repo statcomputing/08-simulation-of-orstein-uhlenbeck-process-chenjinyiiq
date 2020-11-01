@@ -1,0 +1,244 @@
+---
+title: "Assignment08"
+author: "Jinyi Chen"
+date: "2020/10/31"
+output:
+  pdf_document: default
+---
+
+## Exercise 5.3.3
+
+### Question 1
+Ornstein-Uhlenbeck process is a specific situation of Gaussian Markov process , one can write 
+$$
+\text{d}r(t)=[g(t)+h(t)r(t)]\text{d}t+\sigma(t)\text{d}W(t)
+$$
+where $g(t)=\alpha b,\ h(t) = -\alpha,\ \sigma(t) = \sigma$, $W(t)$ is a standard Brownian motion.
+
+And one can obtain a solution given by 
+
+\begin{equation*}
+\begin{aligned}
+r(t) 
+& =  e^{-\alpha (t-u)}r(u) + \alpha \int^t_u e^{-\alpha(t-s)}b\ \text{d}s
++\sigma \int^t_u e^{-\alpha(t-s)} \text{d}W(s) \\
+& = e^{-\alpha (t-u)}r(u) + b [1-e^{\alpha (u-t)}] 
++ Z \sqrt{\sigma^2 \int^t_u e^{-2\alpha(t-s)}\text{d}s} \\
+& = e^{-\alpha (t-u)}r(u) + b [1-e^{\alpha (u-t)}] 
++ \sigma Z \sqrt{\frac {1-e^{-2\alpha(t-u)}} {2\alpha}}
+\end{aligned}
+\end{equation*}
+
+where $0<u<t, Z$ is a standard normal random variable.
+
+One can write, for $t>0 \text{ and } \Delta>0$,
+$$
+r(t+\Delta) = e^{-\alpha \Delta}r(t) + b(1-e^{-\alpha\Delta})
++ \frac{\sigma}{\sqrt{2\alpha}}\sqrt{1-e^{-2\alpha\Delta}} \ Z
+$$
+
+### Question 2
+
+The function `OUprocess` is given as following,
+
+```{r}
+OUprocess <- function(alpha, sigma, b, r0, time, delta){
+  rn <- rep(r0,time)
+  r_old <- r0
+  for (i in 1 : (time/delta) ) {
+    exp <- exp(-alpha * delta)
+    r_new  <- exp *r_old + b*(1-exp) + sigma * sqrt((1-exp^2)/(2*alpha)) * rnorm(1)
+    rn[i] <- r_new
+    r_old <- r_new
+  }
+  return(c(r0,rn))
+}
+```
+
+```{r}
+r0 <- 1
+time <- 500
+delta <- 1/500
+alpha <- c(0.1,1,5)
+sigma <- c(0.1,0.2,0.5)
+b <- c(-5,5)
+t <- seq(from = 0, to = time, by = delta)
+
+## b = 5, sigma = 0.1
+OUp1 <- OUprocess(alpha[1], sigma[1], b[1], r0, time, delta)
+OUp2 <- OUprocess(alpha[2], sigma[1], b[1], r0, time, delta)
+OUp3 <- OUprocess(alpha[3], sigma[1], b[1], r0, time, delta)
+
+## b = 5, sigma = 0.2
+OUp4 <- OUprocess(alpha[1], sigma[2], b[1], r0, time, delta)
+OUp5 <- OUprocess(alpha[2], sigma[2], b[1], r0, time, delta)
+OUp6 <- OUprocess(alpha[3], sigma[2], b[1], r0, time, delta)
+
+## b = 5, sigma = 0.5
+OUp7 <- OUprocess(alpha[1], sigma[3], b[1], r0, time, delta)
+OUp8 <- OUprocess(alpha[2], sigma[3], b[1], r0, time, delta)
+OUp9 <- OUprocess(alpha[3], sigma[3], b[1], r0, time, delta)
+
+## b = - 5, sigma = 0.1
+OUp10 <- OUprocess(alpha[1], sigma[1], b[2], r0, time, delta)
+OUp11 <- OUprocess(alpha[2], sigma[1], b[2], r0, time, delta)
+OUp12 <- OUprocess(alpha[3], sigma[1], b[2], r0, time, delta)
+
+## b = - 5, sigma = 0.2
+OUp13 <- OUprocess(alpha[1], sigma[2], b[2], r0, time, delta)
+OUp14 <- OUprocess(alpha[2], sigma[2], b[2], r0, time, delta)
+OUp15 <- OUprocess(alpha[3], sigma[2], b[2], r0, time, delta)
+
+## b = - 5, sigma = 0.5
+OUp16 <- OUprocess(alpha[1], sigma[3], b[2], r0, time, delta)
+OUp17 <- OUprocess(alpha[2], sigma[3], b[2], r0, time, delta)
+OUp18 <- OUprocess(alpha[3], sigma[3], b[2], r0, time, delta)
+
+```
+
+```{r, warning= FALSE}
+## Plot the sample path
+## (we only plot 6000 points for each combination here.)
+index <- sample(1:250001, 6000)
+data_all <- data.frame(time = t[index],
+                       y1 = OUp1[index], y2 = OUp2[index], y3 = OUp3[index],
+                       y4 = OUp4[index], y5 = OUp5[index], y6 = OUp6[index], 
+                       y7 = OUp7[index], y8 = OUp8[index], y9 = OUp9[index],
+                       y10=OUp10[index], y11=OUp11[index], y12=OUp12[index],
+                       y13=OUp13[index], y14=OUp14[index], y15=OUp15[index],
+                       y16=OUp16[index], y17=OUp17[index], y18=OUp18[index])
+
+library(ggplot2)
+library(dbplyr)
+
+p1 <- ggplot(data_all,aes(x = time))
+
+p1 + 
+  geom_line(aes(y = y1 , color = "alpha = 0.1, sigma = 0.1"))+
+  geom_line(aes(y = y2 , color = "alpha =  1 , sigma = 0.1"))+
+  geom_line(aes(y = y3 , color = "alpha =  5 , sigma = 0.1"))+
+  
+  geom_line(aes(y = y4 , color = "alpha = 0.1, sigma = 0.2"))+
+  geom_line(aes(y = y5 , color = "alpha =  1 , sigma = 0.2"))+
+  geom_line(aes(y = y6 , color = "alpha =  5 , sigma = 0.2"))+
+
+  geom_line(aes(y = y7 , color = "alpha = 0.1, sigma = 0.5"))+
+  geom_line(aes(y = y8 , color = "alpha =  1 , sigma = 0.5"))+
+  geom_line(aes(y = y9 , color = "alpha =  5 , sigma = 0.5"))+  
+  labs(title = "Sample path for r(t) with b = 5", ylab= "random variable")
+
+
+p1 + 
+  geom_line(aes(y = y10, color = "alpha = 0.1, sigma = 0.1"))+
+  geom_line(aes(y = y11, color = "alpha =  1 , sigma = 0.1"))+
+  geom_line(aes(y = y12, color = "alpha =  5 , sigma = 0.1"))+
+  
+  geom_line(aes(y = y13, color = "alpha = 0.1, sigma = 0.2"))+
+  geom_line(aes(y = y14, color = "alpha =  1 , sigma = 0.2"))+
+  geom_line(aes(y = y15, color = "alpha =  5 , sigma = 0.2"))+
+
+  geom_line(aes(y = y16, color = "alpha = 0.1, sigma = 0.5"))+
+  geom_line(aes(y = y17, color = "alpha =  1 , sigma = 0.5"))+
+  geom_line(aes(y = y18, color = "alpha =  5 , sigma = 0.5"))+  
+  labs(title = "Sample path for r(t) with b = - 5", ylab= "random variable")
+
+p1 + 
+  geom_line(aes(y = y10, color = "alpha = 0.1"))+
+  geom_line(aes(y = y11, color = "alpha =  1 "))+
+  geom_line(aes(y = y12, color = "alpha =  5 "))+
+  labs(title = "Sample path for r(t) with different alpha but same b and sigma") + ylab("random variables")
+
+p1 + 
+  geom_line(aes(y = y1, color = "sigma = 0.1"))+
+  geom_line(aes(y = y4, color = "sigma = 0.2 "))+
+  geom_line(aes(y = y7, color = "sigma =0.5"))+
+  labs(title = "Sample path for r(t) with different sigma but same b and alpha") + ylab("random variables")
+
+```
+
+1. $r(t)$ with smaller $\alpha$ will become stable sooner than those with larger $\alpha$.
+2. $r(t)$ with smaller $\sigma$ will be more stable than those with larger $\sigma$.
+
+
+
+### Question 3
+
+From $r(t+\Delta)$ in Question 1, one can set $\Delta=1, t= 0$ and obtain 
+$$
+r(1) = e^{-\alpha}r(0) + b(1-e^{-\alpha})+ \frac{\sigma}{\sqrt{2\alpha}}\sqrt{1-e^{-2\alpha}} \ Z
+$$
+
+Hence, $r(1)$ is a normal random variable with
+
+
+$$
+E[r(1)]  = e^{-\alpha}r(0) + b(1-e^{-\alpha})
+$$
+
+$$
+Var[r(1)]  = \sigma^2 \frac{1-e^{-2\alpha}}{2\alpha}
+$$
+
+Set $\alpha = 0.1,\ \sigma = 0.1,\ b= 5,\ r(0)=1$, then $E[r(1)]=1.38065, Var[r(1)]=0.009063462$.
+
+`Eule.1` function here can be used to generate $r(1)$ by using Euler-Maruyama method.
+```{r}
+Euler.1 <- function(r0, delta, alpha, sigma, b){
+  n <- 1/delta
+  r_old <- r0
+  for (i in 1:n) {
+    r_new <- r_old + alpha * (b-r_old) *delta + sigma * rnorm(1, sd = sqrt(delta))
+    r_old <- r_new
+  }
+  return(r_new)
+}
+```
+Generate $r(1)$ with sample size 1000 and different $\delta$.
+```{r}
+n <- 1000
+alpha <- 0.1 
+sigma <- 0.1
+b <- 5
+r0 <- 1
+delta <- c(1, .5, .1, .01)
+
+r1_1 <- vector()
+for (i in 1:1000) {
+ r1_1[i] <- Euler.1(r0,delta[1], alpha, sigma, b) 
+}
+
+r1_.5 <- vector()
+for (i in 1:1000) {
+ r1_.5[i] <- Euler.1(r0,delta[1], alpha, sigma, b) 
+}
+
+r1_.1 <- vector()
+for (i in 1:1000) {
+ r1_.1[i] <- Euler.1(r0,delta[1], alpha, sigma, b) 
+}
+
+r1_.01 <- vector()
+for (i in 1:1000) {
+ r1_.01[i] <- Euler.1(r0,delta[1], alpha, sigma, b) 
+}
+
+#Generate the true density
+mean <- exp(-alpha) * r0 + b * (1-exp(-alpha))
+sd <- sqrt((sigma^2) * (1-exp(-2*alpha)) / (2*alpha))
+r <- rnorm(1000, mean, sd)
+```
+Use `ggplot` to plot our graph.
+```{r}
+data_density <- data.frame(True.density = r, kernel1 = r1_1, kernel2 = r1_.5,
+                           kernel3 = r1_.1, kernel4 = r1_.01)
+
+ggplot(data_density)+
+  geom_density(aes(x = True.density, color = "True density"))+
+  geom_density(aes(x = kernel1, color = "Kernel density with delta = 1"  ))+
+  geom_density(aes(x = kernel2, color = "Kernel density with delta = 0.5"))+
+  geom_density(aes(x = kernel3, color = "Kernel density with delta = 0.1"))+
+  geom_density(aes(x = kernel3, color = "Kernel density with delta = 0.01"))+
+  labs(x = "r(1)",
+       title = "Plot of true and kernel densities of r(1)")
+
+```
