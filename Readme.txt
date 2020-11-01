@@ -1,0 +1,1 @@
+The rmd file should be able to generate a pdf file with the same name.
