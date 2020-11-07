@@ -242,3 +242,72 @@ ggplot(data_density)+
        title = "Plot of true and kernel densities of r(1)")
 
 ```
+
+## Exercise 5.3.4
+
+### Question 1
+
+$N(5)$ is the number of events by time 5, which is a Poisson random variable with its mean $\Lambda(5)=\int_0^{5}\lambda(t)\text{d}t$.
+
+Use function `integrate` in _R_, one have
+
+```{r}
+# f is the intensity function.
+f <- function(x){sqrt(x) + exp(-x) * sin(2*pi*x)}
+integrate(f,lower = 0, upper = 5)
+```
+
+$N(5)$ is a Poisson random variable with $\lambda = 7.607738$ as its parameter.
+
+### Question 2
+
+The thinning method is chosen to avoid integral calculation. Obviousely, the maximum value of $\lambda(t)$ is $\lambda(t)_{\text{max}}= \lambda(5)=\sqrt5$.
+
+```{r}
+t <- 5
+optimize(f, interval = c(0, t), maximum = TRUE)
+
+curve(f, 0, t, ylab = "lambda(t)")
+```
+
+`Thinning_m` is given below to simulate from this Poisson process.
+```{r}
+Thinning_m <- function(intensity, intmax, tmax){
+  n <- rpois(1, intmax)
+  t <- runif(n, 0, tmax)
+  u <- runif(n)
+  accept <- u < intensity(t) / intmax
+  sort(t[accept])
+}
+```
+
+### Question 3
+
+```{r}
+sample <- replicate(1000,Thinning_m(f, sqrt(5), 5))
+sample <- sort(unlist(sample))
+
+x <- 1:1000/200
+y<- f(x)/integrate(f,0,5)$value
+
+# "adjust = 0.5" is chosen in density function to make the two lines more similar.
+plot(density(sample, adjust = 0.5, from = 0, to = 5), xlab = "time", col = "red"
+     , main = "Kernel Density and the True Density I" ,
+     xlim = c(0, 5), ylim = c(0,0.32), lty = 1)
+lines(x, y, col = "blue", lty = 2)
+legend("bottomright", legend = c("Kernal", "True"), col = c("red", "blue"),
+       lty = c(1, 2))
+```
+
+If we genetate envents from this Poisson process 10,000 times, the plot will be much nicer.
+```{r}
+sample <- replicate(10000,Thinning_m(f, sqrt(5), 5))
+sample <- sort(unlist(sample))
+plot(density(sample, adjust = 0.5, from = 0, to = 5), xlab = "time", col = "red"
+     , main = "Kernel Density and the True Density II" ,
+     xlim = c(0, 5), ylim = c(0, 0.32), lty = 1)
+lines(x, y, col = "blue", lty = 2)
+legend("bottomright", legend = c("Kernal", "True"), col = c("red", "blue"),
+       lty = c(1, 2))
+
+```
